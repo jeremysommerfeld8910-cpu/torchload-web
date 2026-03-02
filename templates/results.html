@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Results | torchload-checker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+        header { margin-bottom: 2rem; }
+        h1 { font-size: 1.8rem; font-weight: 700; }
+        h1 a { color: #e0e0e0; text-decoration: none; }
+        h1 a span { color: #ff4444; }
+        .back { color: #888; text-decoration: none; font-size: 0.9rem; }
+        .back:hover { color: #ff4444; }
+        .summary { background: #111; border: 1px solid #222; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; display: flex; gap: 2rem; flex-wrap: wrap; align-items: center; }
+        .summary-item { text-align: center; }
+        .summary-num { font-size: 2rem; font-weight: 700; }
+        .summary-label { font-size: 0.85rem; color: #666; }
+        .critical { color: #ff2222; }
+        .high { color: #ff6644; }
+        .medium { color: #ffaa00; }
+        .low { color: #44aaff; }
+        .clean { color: #44ff44; }
+        .repo-info { background: #111; border: 1px solid #222; border-radius: 8px; padding: 1rem; margin-bottom: 2rem; }
+        .repo-info a { color: #ff4444; text-decoration: none; }
+        .repo-info a:hover { text-decoration: underline; }
+        .findings { margin-bottom: 2rem; }
+        .finding { background: #111; border-left: 4px solid #333; border-radius: 0 8px 8px 0; padding: 1rem 1.5rem; margin-bottom: 0.75rem; }
+        .finding.sev-CRITICAL { border-left-color: #ff2222; }
+        .finding.sev-HIGH { border-left-color: #ff6644; }
+        .finding.sev-MEDIUM { border-left-color: #ffaa00; }
+        .finding.sev-LOW { border-left-color: #44aaff; }
+        .finding-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .sev-badge { padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+        .sev-badge.CRITICAL { background: #3d0000; color: #ff2222; }
+        .sev-badge.HIGH { background: #3d1a00; color: #ff6644; }
+        .sev-badge.MEDIUM { background: #3d2d00; color: #ffaa00; }
+        .sev-badge.LOW { background: #002244; color: #44aaff; }
+        .finding-file { font-family: monospace; color: #888; font-size: 0.9rem; }
+        .finding-desc { color: #aaa; font-size: 0.9rem; margin-top: 0.3rem; }
+        .finding-code { background: #1a1a1a; padding: 0.5rem 0.8rem; border-radius: 4px; font-family: monospace; font-size: 0.85rem; margin-top: 0.5rem; overflow-x: auto; color: #ff8888; }
+        .mitigations { background: #111; border: 1px solid #222; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }
+        .mitigations h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+        .mitigation { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .mit-yes { color: #44ff44; }
+        .mit-no { color: #ff4444; }
+        .no-findings { background: #0d2d0d; border: 1px solid #1a4a1a; border-radius: 12px; padding: 2rem; text-align: center; margin-bottom: 2rem; }
+        .no-findings h2 { color: #44ff44; margin-bottom: 0.5rem; }
+        .cache-note { color: #444; font-size: 0.8rem; text-align: center; margin-top: 1rem; }
+        .api-note { background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 1rem; margin-bottom: 2rem; font-size: 0.9rem; }
+        .api-note code { background: #111; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; }
+        footer { text-align: center; color: #444; font-size: 0.85rem; margin-top: 2rem; border-top: 1px solid #222; padding-top: 1rem; }
+        footer a { color: #666; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><a href="/">torchload<span>-checker</span></a></h1>
+            <a href="/" class="back">&larr; New scan</a>
+        </header>
+
+        <div class="repo-info">
+            <strong>Repository:</strong> <a href="{{ result.repo_url }}" target="_blank">{{ result.repo_url }}</a><br>
+            <strong>Scanned:</strong> {{ result.scanned_at[:19] }} UTC
+            {% if result.from_cache %} <em>(cached)</em>{% endif %}
+        </div>
+
+        {% if result.total_findings == 0 %}
+        <div class="no-findings">
+            <h2>No vulnerabilities found</h2>
+            <p>This repository has no detected CWE-502 deserialization issues in production code.</p>
+        </div>
+        {% else %}
+        <div class="summary">
+            <div class="summary-item">
+                <div class="summary-num {% if result.total_findings > 0 %}critical{% else %}clean{% endif %}">{{ result.total_findings }}</div>
+                <div class="summary-label">Total Findings</div>
+            </div>
+            {% for sev in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] %}
+            {% if result.severity_summary.get(sev, 0) > 0 %}
+            <div class="summary-item">
+                <div class="summary-num {{ sev.lower() }}">{{ result.severity_summary[sev] }}</div>
+                <div class="summary-label">{{ sev }}</div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="findings">
+            {% for f in result.findings %}
+            <div class="finding sev-{{ f.severity }}">
+                <div class="finding-header">
+                    <span class="finding-file">{{ f.file }}:{{ f.line }}</span>
+                    <span class="sev-badge {{ f.severity }}">{{ f.severity }} | {{ f.cwe }}</span>
+                </div>
+                <div class="finding-desc"><strong>{{ f.pattern }}</strong> &mdash; {{ f.description }}</div>
+                <div class="finding-code">{{ f.code }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="mitigations">
+            <h2>Mitigations Detected</h2>
+            {% for name, found in result.mitigations.items() %}
+            <div class="mitigation">
+                {% if found %}
+                <span class="mit-yes">&#x2713;</span>
+                {% else %}
+                <span class="mit-no">&#x2717;</span>
+                {% endif %}
+                <span>{{ name.replace('_', ' ').title() }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="api-note">
+            <strong>API Access:</strong> Use this scanner programmatically.<br>
+            <code>curl -X POST {{ request.base_url }}api/v1/scan -H "Content-Type: application/json" -d '{"repo_url": "owner/repo"}'</code>
+        </div>
+
+        <footer>
+            <p>torchload-checker v0.4.0 | <a href="https://github.com/jeremysommerfeld8910-cpu/torchload-checker">GitHub</a></p>
+        </footer>
+    </div>
+</body>
+</html>
