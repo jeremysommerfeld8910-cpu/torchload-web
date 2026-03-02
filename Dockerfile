@@ -9,9 +9,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Copy the scanner from the tools directory
-COPY torchload_checker.py /app/torchload_checker.py
-
 EXPOSE 8100
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8100"]
+CMD uvicorn app:app --host 0.0.0.0 --port ${PORT:-8100}

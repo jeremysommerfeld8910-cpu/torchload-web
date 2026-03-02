@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: torchload-web
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: SCANNER_PATH
+        value: /app/torchload_checker.py
