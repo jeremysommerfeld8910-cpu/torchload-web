@@ -7,7 +7,7 @@ tags: machinelearning, security, python, pytorch
 
 # I Scanned 50+ ML Repos for torch.load() Vulnerabilities
 
-**TL;DR:** `torch.load()` uses pickle, which can execute arbitrary code. I found 160+ unsafe patterns across major ML projects. I built a free scanner you can use right now.
+**TL;DR:** `torch.load()` uses pickle, which can execute arbitrary code. I found 230+ unsafe patterns across major ML projects including TorchServe's core handler. I built a free scanner you can use right now.
 
 ## The Problem
 
@@ -27,15 +27,18 @@ I scanned 50+ popular ML/AI repositories on GitHub. Results:
 
 | Repository | Stars | Unsafe Patterns | Mitigated? |
 |-----------|-------|----------------|------------|
+| NVIDIA/NeMo | 17K | 53 | Partially |
 | huggingface/transformers | 148K | 46 | Partially (safetensors) |
-| NVIDIA/NeMo | 17K | 53 | Yes (weights_only) |
+| coqui-ai/TTS | 37K | 31 | **No** |
 | microsoft/DeepSpeed | 37K | 24 | Partially |
+| pytorch/serve (TorchServe) | 4K | 20 | **No** (core handler!) |
 | facebookresearch/detectron2 | 34K | 16 | **No** |
 | pytorch/examples | 23K | 15 | Partially |
+| run-llama/llama_index | 47K | 11 | **No** |
 | Lightning-AI/pytorch-lightning | 31K | 10 | Partially |
-| coqui-ai/TTS | 37K | 31 | No |
+| comfyanonymous/ComfyUI | 105K | 2 | Mostly migrated |
 
-**Total: 200+ unsafe deserialization patterns across major projects.** And detectron2 has zero mitigations.
+**Total: 230+ unsafe deserialization patterns across major projects.** TorchServe's core serving handler is affected — every model deployment is at risk. detectron2 and coqui-ai/TTS have zero mitigations. ComfyUI and text-generation-webui have properly migrated, proving it's possible.
 
 ## The Fix Is Simple
 
