@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -26,7 +27,20 @@ app = FastAPI(
     title="torchload-checker",
     description="Scan ML/AI repos for unsafe deserialization (CWE-502)",
     version="0.4.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
 )
+
+# CORS for API consumers
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+# Request counter for stats
+scan_stats: dict[str, int] = {"total_scans": 0, "cache_hits": 0, "errors": 0}
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
@@ -200,20 +214,25 @@ async def scan_form(request: Request):
     cached = get_cached_result(normalized)
     if cached:
         cached["from_cache"] = True
+        scan_stats["cache_hits"] += 1
         return templates.TemplateResponse("results.html", {
             "request": request,
             "result": cached,
         })
 
+    scan_stats["total_scans"] += 1
+
     # Run scan
     try:
         result = await clone_and_scan(normalized)
     except asyncio.TimeoutError:
+        scan_stats["errors"] += 1
         return templates.TemplateResponse("index.html", {
             "request": request,
             "error": "Scan timed out. Try a smaller repository.",
         })
     except Exception as e:
+        scan_stats["errors"] += 1
         return templates.TemplateResponse("index.html", {
             "request": request,
             "error": f"Scan failed: {str(e)[:100]}",
@@ -262,13 +281,18 @@ async def api_scan(request: Request):
     cached = get_cached_result(normalized)
     if cached:
         cached["from_cache"] = True
+        scan_stats["cache_hits"] += 1
         return JSONResponse(cached)
+
+    scan_stats["total_scans"] += 1
 
     try:
         result = await clone_and_scan(normalized)
     except asyncio.TimeoutError:
+        scan_stats["errors"] += 1
         raise HTTPException(504, "Scan timed out")
     except Exception as e:
+        scan_stats["errors"] += 1
         raise HTTPException(500, f"Scan failed: {str(e)[:100]}")
 
     if result.get("status") == "error":
@@ -282,6 +306,45 @@ async def api_scan(request: Request):
 @app.get("/api/v1/health")
 async def health():
     return {"status": "ok", "version": "0.4.0", "scanner": str(SCANNER_PATH)}
+
+
+@app.get("/api/v1/stats")
+async def stats():
+    """Public scan statistics."""
+    return {
+        "total_scans": scan_stats["total_scans"],
+        "cache_hits": scan_stats["cache_hits"],
+        "errors": scan_stats["errors"],
+        "patterns_detected": 14,
+        "version": "0.4.0",
+    }
+
+
+@app.get("/api/v1/badge/{owner}/{repo}")
+async def badge(owner: str, repo: str):
+    """Returns a shields.io-compatible JSON badge for a repo's scan status."""
+    repo_url = f"https://github.com/{owner}/{repo}.git"
+    cached = get_cached_result(repo_url)
+    if cached:
+        count = cached.get("total_findings", 0)
+        if count == 0:
+            color = "brightgreen"
+            message = "clean"
+        elif count <= 5:
+            color = "yellow"
+            message = f"{count} findings"
+        else:
+            color = "red"
+            message = f"{count} findings"
+    else:
+        color = "lightgrey"
+        message = "not scanned"
+    return {
+        "schemaVersion": 1,
+        "label": "CWE-502",
+        "message": message,
+        "color": color,
+    }
 
 
 if __name__ == "__main__":

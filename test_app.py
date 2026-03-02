@@ -1,7 +1,7 @@
 """Tests for torchload-web app."""
 import pytest
 from fastapi.testclient import TestClient
-from app import app, validate_github_url, check_rate_limit, rate_limits
+from app import app, validate_github_url, check_rate_limit, rate_limits, scan_stats
 
 
 client = TestClient(app)
@@ -104,3 +104,43 @@ class TestAPIEndpoint:
             headers={"Content-Type": "application/json"},
         )
         assert response.status_code == 400
+
+
+class TestStatsEndpoint:
+    def test_stats_returns_data(self):
+        response = client.get("/api/v1/stats")
+        assert response.status_code == 200
+        data = response.json()
+        assert "total_scans" in data
+        assert data["patterns_detected"] == 14
+        assert data["version"] == "0.4.0"
+
+
+class TestBadgeEndpoint:
+    def test_badge_not_scanned(self):
+        response = client.get("/api/v1/badge/nonexistent/repo")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["schemaVersion"] == 1
+        assert data["label"] == "CWE-502"
+        assert data["message"] == "not scanned"
+        assert data["color"] == "lightgrey"
+
+
+class TestCORS:
+    def test_cors_headers_present(self):
+        response = client.options(
+            "/api/v1/health",
+            headers={"Origin": "https://example.com", "Access-Control-Request-Method": "GET"},
+        )
+        assert response.status_code == 200
+
+
+class TestAPIDocs:
+    def test_openapi_docs(self):
+        response = client.get("/api/docs")
+        assert response.status_code == 200
+
+    def test_redoc(self):
+        response = client.get("/api/redoc")
+        assert response.status_code == 200
