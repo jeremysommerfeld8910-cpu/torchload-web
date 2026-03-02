@@ -26,7 +26,7 @@ from fastapi.templating import Jinja2Templates
 app = FastAPI(
     title="torchload-checker",
     description="Scan ML/AI repos for unsafe deserialization (CWE-502)",
-    version="0.4.0",
+    version="0.5.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
@@ -305,7 +305,7 @@ async def api_scan(request: Request):
 
 @app.get("/api/v1/health")
 async def health():
-    return {"status": "ok", "version": "0.4.0"}
+    return {"status": "ok", "version": "0.5.0"}
 
 
 @app.get("/api/v1/stats")
@@ -315,8 +315,8 @@ async def stats():
         "total_scans": scan_stats["total_scans"],
         "cache_hits": scan_stats["cache_hits"],
         "errors": scan_stats["errors"],
-        "patterns_detected": 14,
-        "version": "0.4.0",
+        "patterns_detected": 18,
+        "version": "0.5.0",
     }
 
 

@@ -67,7 +67,7 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
-        assert data["version"] == "0.4.0"
+        assert data["version"] == "0.5.0"
         assert "scanner" not in data  # Don't leak internal paths
 
 
@@ -113,8 +113,8 @@ class TestStatsEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "total_scans" in data
-        assert data["patterns_detected"] == 14
-        assert data["version"] == "0.4.0"
+        assert data["patterns_detected"] == 18
+        assert data["version"] == "0.5.0"
 
 
 class TestBadgeEndpoint:
