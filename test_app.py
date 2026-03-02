@@ -68,6 +68,7 @@ class TestHealthEndpoint:
         data = response.json()
         assert data["status"] == "ok"
         assert data["version"] == "0.4.0"
+        assert "scanner" not in data  # Don't leak internal paths
 
 
 class TestHomePage:

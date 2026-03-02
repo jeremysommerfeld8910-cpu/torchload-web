@@ -305,7 +305,7 @@ async def api_scan(request: Request):
 
 @app.get("/api/v1/health")
 async def health():
-    return {"status": "ok", "version": "0.4.0", "scanner": str(SCANNER_PATH)}
+    return {"status": "ok", "version": "0.4.0"}
 
 
 @app.get("/api/v1/stats")
