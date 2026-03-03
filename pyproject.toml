@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "torchload-checker"
+version = "0.5.1"
+description = "Scan ML/AI repos for unsafe deserialization (CWE-502)"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+authors = [
+    {name = "Jeremy Sommerfeld"}
+]
+keywords = ["security", "pytorch", "pickle", "deserialization", "CWE-502", "SARIF", "ML", "AI"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://github.com/jeremysommerfeld8910-cpu/torchload-checker"
+Issues = "https://github.com/jeremysommerfeld8910-cpu/torchload-checker/issues"
+
+[project.scripts]
+torchload-checker = "torchload_checker:main"
+
+[tool.setuptools]
+py-modules = ["torchload_checker"]

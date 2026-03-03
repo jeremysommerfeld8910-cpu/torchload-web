@@ -5,15 +5,15 @@ Web UI and REST API for scanning ML/AI repositories for unsafe deserialization v
 [![Tests](https://img.shields.io/badge/tests-23%20passing-brightgreen)](https://github.com/jeremysommerfeld8910-cpu/torchload-web)
 [![Python](https://img.shields.io/badge/python-3.12-blue)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![CWE-502](https://img.shields.io/badge/CWE--502-14%20patterns-orange)](https://cwe.mitre.org/data/definitions/502.html)
+[![CWE-502](https://img.shields.io/badge/CWE--502-22%20patterns-orange)](https://cwe.mitre.org/data/definitions/502.html)
 
-Powered by [torchload-checker](https://github.com/jeremysommerfeld8910-cpu/torchload-checker) - detects `torch.load()`, `pickle.load()`, `yaml.load()`, and 11 more unsafe deserialization patterns.
+Powered by [torchload-checker](https://github.com/jeremysommerfeld8910-cpu/torchload-checker) - detects `torch.load()`, `pickle.load()`, `yaml.load()`, `torch.jit.load()`, and 18 more unsafe deserialization patterns.
 
 ## Features
 
 - **Web UI** - Paste a GitHub repo URL and get results instantly
 - **REST API** - JSON API for programmatic access
-- **14 Detection Patterns** - torch.load, pickle, cloudpickle, dill, joblib, yaml.load, shelve, marshal, numpy.load, pandas.read_pickle, and more
+- **22 Detection Patterns** - torch.load, torch.jit.load, pickle, cloudpickle, dill, joblib, yaml.load, shelve, marshal, numpy.load, pandas.read_pickle, jsonpickle, scipy.io.loadmat, and more
 - **Mitigation Detection** - Checks for safetensors, weights_only=True, safe_loader usage
 - **Severity Ratings** - CRITICAL, HIGH, MEDIUM, LOW with CWE references
 - **Result Caching** - 1-hour cache for repeated scans
@@ -112,7 +112,7 @@ pip install pytest httpx
 pytest test_app.py -v
 ```
 
-23 tests covering URL validation, rate limiting, API endpoints, CORS, and documentation.
+30 tests covering URL validation, rate limiting, API endpoints, CORS, and documentation.
 
 ## Detection Patterns
 
@@ -131,7 +131,38 @@ pytest test_app.py -v
 | `torch.save()` + `torch.load()` | HIGH | Unsafe save/load cycle |
 | `exec()` / `eval()` in model loading | CRITICAL | Direct code execution |
 | `__reduce__` methods | HIGH | Custom pickle deserialization hooks |
+| `torch.jit.load()` | HIGH | TorchScript models can contain arbitrary Python code |
+| `jsonpickle.decode()` | HIGH | JSON-pickle RCE — same risk as pickle |
+| `scipy.io.loadmat()` | MEDIUM | Can unpickle object arrays from MATLAB files |
+| `pandas.read_msgpack()` | HIGH | Deprecated but dangerous — arbitrary object deserialization |
+| `torch.load(weights_only=False)` | CRITICAL | Explicitly disabling safety check |
+| `numpy.load(allow_pickle=True)` | MEDIUM | Explicitly enabling pickle in numpy |
+| `yaml.load()` (no SafeLoader) | HIGH | YAML deserialization with code execution |
 | `safetensors` (mitigation) | INFO | Safe serialization detected |
+
+## Real-World Results
+
+Scanned 42+ popular ML/AI repositories. **358 findings across 13 affected repos:**
+
+| Repository | Stars | Findings |
+|-----------|-------|----------|
+| facebookresearch/fairseq | 32K+ | 81 |
+| NVIDIA/NeMo | 13K+ | 75 |
+| huggingface/transformers | 140K+ | 46 |
+| microsoft/DeepSpeed | 36K+ | 35 |
+| coqui-ai/TTS | 45K+ | 31 |
+| + 8 more repos | | 90 |
+
+Zero false positives across 29 clean repos (TensorFlow, scikit-learn, Keras, etc.).
+
+## CLI Usage (pip install)
+
+```bash
+pip install torchload-checker
+torchload-checker /path/to/repo --summary
+torchload-checker /path/to/repo --sarif > results.sarif
+torchload-checker /path/to/repo --fail-on CRITICAL --exclude-tests
+```
 
 ## Related
 

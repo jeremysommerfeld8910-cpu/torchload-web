@@ -26,7 +26,7 @@ from fastapi.templating import Jinja2Templates
 app = FastAPI(
     title="torchload-checker",
     description="Scan ML/AI repos for unsafe deserialization (CWE-502)",
-    version="0.5.0",
+    version="0.5.1",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
 )
@@ -180,7 +180,7 @@ async def clone_and_scan(repo_url: str) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 @app.post("/scan", response_class=HTMLResponse)
@@ -190,23 +190,20 @@ async def scan_form(request: Request):
     repo_url = str(form.get("repo_url", "")).strip()
 
     if not repo_url:
-        return templates.TemplateResponse("index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "index.html", {
             "error": "Please enter a repository URL",
         })
 
     valid, normalized = validate_github_url(repo_url)
     if not valid:
-        return templates.TemplateResponse("index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "index.html", {
             "error": normalized,
         })
 
     # Rate limit check
     client_ip = get_client_ip(request)
     if not check_rate_limit(client_ip):
-        return templates.TemplateResponse("index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "index.html", {
             "error": f"Rate limit exceeded ({FREE_SCANS_PER_DAY} scans/day). Upgrade to Pro for unlimited scans.",
         })
 
@@ -215,8 +212,7 @@ async def scan_form(request: Request):
     if cached:
         cached["from_cache"] = True
         scan_stats["cache_hits"] += 1
-        return templates.TemplateResponse("results.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "results.html", {
             "result": cached,
         })
 
@@ -227,20 +223,17 @@ async def scan_form(request: Request):
         result = await clone_and_scan(normalized)
     except asyncio.TimeoutError:
         scan_stats["errors"] += 1
-        return templates.TemplateResponse("index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "index.html", {
             "error": "Scan timed out. Try a smaller repository.",
         })
     except Exception as e:
         scan_stats["errors"] += 1
-        return templates.TemplateResponse("index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "index.html", {
             "error": f"Scan failed: {str(e)[:100]}",
         })
 
     if result.get("status") == "error":
-        return templates.TemplateResponse("index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "index.html", {
             "error": result.get("error", "Unknown error"),
         })
 
@@ -248,8 +241,7 @@ async def scan_form(request: Request):
     save_cached_result(normalized, result)
     result["from_cache"] = False
 
-    return templates.TemplateResponse("results.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "results.html", {
         "result": result,
     })
 
@@ -305,7 +297,7 @@ async def api_scan(request: Request):
 
 @app.get("/api/v1/health")
 async def health():
-    return {"status": "ok", "version": "0.5.0"}
+    return {"status": "ok", "version": "0.5.1"}
 
 
 @app.get("/api/v1/stats")
@@ -315,8 +307,8 @@ async def stats():
         "total_scans": scan_stats["total_scans"],
         "cache_hits": scan_stats["cache_hits"],
         "errors": scan_stats["errors"],
-        "patterns_detected": 18,
-        "version": "0.5.0",
+        "patterns_detected": 22,
+        "version": "0.5.1",
     }
 
 
@@ -406,6 +398,83 @@ async def api_scan_shorthand(owner: str, repo: str, request: Request):
     save_cached_result(repo_url, result)
     result["from_cache"] = False
     return JSONResponse(result)
+
+
+@app.get("/api/v1/pricing")
+async def pricing():
+    """Show pricing tiers for API access."""
+    return {
+        "tiers": [
+            {
+                "name": "Free",
+                "price": "$0/month",
+                "scans_per_day": 3,
+                "features": ["Basic CWE-502 scan", "18 detection patterns", "JSON results"]
+            },
+            {
+                "name": "Pro",
+                "price": "$9/month",
+                "scans_per_day": 50,
+                "features": ["All Free features", "SARIF output", "CI/CD integration", "Priority scanning", "Webhook notifications"]
+            },
+            {
+                "name": "Enterprise",
+                "price": "Contact us",
+                "scans_per_day": "Unlimited",
+                "features": ["All Pro features", "Private repos", "Custom patterns", "SLA", "Dedicated support"]
+            }
+        ],
+        "note": "Pro and Enterprise tiers coming soon. Currently all users get Free tier."
+    }
+
+
+@app.get("/api/v1/report/{owner}/{repo}")
+async def report(owner: str, repo: str):
+    """Generate a formatted security report for a scanned repo."""
+    repo_url = f"https://github.com/{owner}/{repo}.git"
+    cached = get_cached_result(repo_url)
+    if not cached:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Repository not scanned yet. Use /api/v1/scan/{owner}/{repo} first."}
+        )
+
+    findings = cached.get("findings", [])
+    severity_counts = cached.get("severity_summary", {})
+
+    risk_level = "CLEAN"
+    if severity_counts.get("CRITICAL", 0) > 0:
+        risk_level = "CRITICAL"
+    elif severity_counts.get("HIGH", 0) > 0:
+        risk_level = "HIGH"
+    elif severity_counts.get("MEDIUM", 0) > 0:
+        risk_level = "MEDIUM"
+    elif severity_counts.get("LOW", 0) > 0:
+        risk_level = "LOW"
+
+    return {
+        "report": {
+            "repository": f"https://github.com/{owner}/{repo}",
+            "scanned_at": cached.get("scanned_at", "unknown"),
+            "risk_level": risk_level,
+            "total_findings": cached.get("total_findings", 0),
+            "severity_summary": severity_counts,
+            "scanner": "torchload-checker v0.5.1",
+            "patterns_checked": 22,
+            "cwe": "CWE-502 (Deserialization of Untrusted Data)",
+        },
+        "findings": [
+            {
+                "file": f.get("file", ""),
+                "line": f.get("line", 0),
+                "pattern": f.get("pattern", ""),
+                "severity": f.get("severity", "UNKNOWN"),
+                "snippet": f.get("snippet", "")[:200],
+            }
+            for f in findings[:50]
+        ],
+        "recommendations": cached.get("mitigations", {}),
+    }
 
 
 if __name__ == "__main__":

@@ -37,11 +37,12 @@ Or use safetensors instead of pickle-based formats.
 
 ### The scanner
 
-**torchload-checker** detects 18 patterns including:
+**torchload-checker** detects 22 patterns including:
 - `torch.load()` without `weights_only=True`
+- `torch.jit.load` (TorchScript models)
 - `pickle.load/loads`, `cloudpickle`, `dill`, `joblib.load`
 - `yaml.load` without SafeLoader
-- `numpy.load(allow_pickle=True)`
+- `numpy.load(allow_pickle=True)`, `jsonpickle.decode`
 - `exec/eval` in model loading contexts
 - And more
 
@@ -52,7 +53,7 @@ torchload-checker /path/to/your/repo
 
 GitHub Action for CI:
 ```yaml
-- uses: jeremysommerfeld8910-cpu/torchload-checker@v0.5.0
+- uses: jeremysommerfeld8910-cpu/torchload-checker@v0.5.1
   with:
     severity: HIGH
 ```

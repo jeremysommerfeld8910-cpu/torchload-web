@@ -2,15 +2,15 @@
 _Copy/paste ready_
 
 ## Title:
-torchload-checker: CWE-502 scanner for ML/AI codebases — 18 detection patterns, SARIF output, GitHub Action
+torchload-checker: CWE-502 scanner for ML/AI codebases — 22 detection patterns, SARIF output, GitHub Action
 
 ## Body:
 
-Released v0.5.0 of torchload-checker, a static analysis tool focused on unsafe deserialization in ML/AI Python codebases.
+Released v0.5.1 of torchload-checker, a static analysis tool focused on unsafe deserialization in ML/AI Python codebases.
 
 **Problem:** ML frameworks extensively use pickle-based serialization (torch.load, joblib.load, etc.) which allows arbitrary code execution. This is CWE-502, and it's endemic in the ML ecosystem.
 
-**Detection patterns (18 total):**
+**Detection patterns (22 total):**
 - torch.load without weights_only=True
 - pickle.load/loads, cloudpickle, dill
 - joblib.load without trusted sources
@@ -39,7 +39,7 @@ pip install torchload-checker
 
 **CI integration:**
 ```yaml
-- uses: jeremysommerfeld8910-cpu/torchload-checker@v0.5.0
+- uses: jeremysommerfeld8910-cpu/torchload-checker@v0.5.1
 - uses: github/codeql-action/upload-sarif@v3
   with:
     sarif_file: torchload-results.sarif

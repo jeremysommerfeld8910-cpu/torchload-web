@@ -67,7 +67,7 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
-        assert data["version"] == "0.5.0"
+        assert data["version"] == "0.5.1"
         assert "scanner" not in data  # Don't leak internal paths
 
 
@@ -113,8 +113,8 @@ class TestStatsEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "total_scans" in data
-        assert data["patterns_detected"] == 18
-        assert data["version"] == "0.5.0"
+        assert data["patterns_detected"] == 22
+        assert data["version"] == "0.5.1"
 
 
 class TestBadgeEndpoint:
@@ -142,8 +142,8 @@ class TestPatternsEndpoint:
         response = client.get("/api/v1/patterns")
         assert response.status_code == 200
         data = response.json()
-        assert data["total_patterns"] == 18
-        assert len(data["patterns"]) == 18
+        assert data["total_patterns"] == 22
+        assert len(data["patterns"]) == 22
 
     def test_patterns_have_required_fields(self):
         response = client.get("/api/v1/patterns")
@@ -160,7 +160,7 @@ class TestPatternsEndpoint:
         data = response.json()
         assert "severity_breakdown" in data
         total = sum(data["severity_breakdown"].values())
-        assert total == 18
+        assert total == 22
 
 
 class TestScanShorthand:
@@ -172,6 +172,34 @@ class TestScanShorthand:
             rate_limits.setdefault("testclient", []).append(__import__("time").time())
         response = client.get("/api/v1/scan/pytorch/pytorch")
         assert response.status_code == 429
+
+
+class TestPricingEndpoint:
+    def test_pricing_returns_tiers(self):
+        response = client.get("/api/v1/pricing")
+        assert response.status_code == 200
+        data = response.json()
+        assert "tiers" in data
+        assert len(data["tiers"]) == 3
+        names = [t["name"] for t in data["tiers"]]
+        assert "Free" in names
+        assert "Pro" in names
+        assert "Enterprise" in names
+
+    def test_free_tier_details(self):
+        response = client.get("/api/v1/pricing")
+        data = response.json()
+        free = [t for t in data["tiers"] if t["name"] == "Free"][0]
+        assert free["scans_per_day"] == 3
+        assert free["price"] == "$0/month"
+
+
+class TestReportEndpoint:
+    def test_report_not_scanned(self):
+        response = client.get("/api/v1/report/nonexistent/repo")
+        assert response.status_code == 404
+        data = response.json()
+        assert "not scanned" in data["error"].lower()
 
 
 class TestAPIDocs:

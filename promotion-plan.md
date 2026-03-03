@@ -1,4 +1,4 @@
-# torchload-checker v0.5.0 Promotion Plan
+# torchload-checker v0.5.1 Promotion Plan
 _Updated: 2026-03-02. Ready to execute — all drafts written._
 
 ## Status: READY FOR JEREMY
@@ -19,7 +19,7 @@ All content drafted. Jeremy just needs to copy/paste and post.
 
 ### 3. Reddit r/netsec — READY
 - File: `~/torchload-web/promotion-reddit-netsec.md`
-- Technical focus: all 18 patterns, SARIF, CI integration
+- Technical focus: all 22 patterns, SARIF, CI integration
 - r/netsec wants quality technical content
 
 ### 4. Reddit r/Python — TODO (Jeremy posts)

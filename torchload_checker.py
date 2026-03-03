@@ -157,6 +157,34 @@ PATTERNS = [
         "cwe": "CWE-94",
         "desc": "exec/eval with model-related data — direct code execution vulnerability"
     },
+    {
+        "name": "torch.jit.load",
+        "regex": r"torch\.jit\.load\s*\(",
+        "severity": "HIGH",
+        "cwe": "CWE-502",
+        "desc": "TorchScript models can contain arbitrary Python code executed during loading"
+    },
+    {
+        "name": "jsonpickle.decode",
+        "regex": r"jsonpickle\.(?:decode|loads?)\s*\(",
+        "severity": "HIGH",
+        "cwe": "CWE-502",
+        "desc": "jsonpickle deserializes arbitrary Python objects from JSON — same RCE risk as pickle"
+    },
+    {
+        "name": "scipy.io.loadmat",
+        "regex": r"scipy\.io\.loadmat\s*\(",
+        "severity": "MEDIUM",
+        "cwe": "CWE-502",
+        "desc": "scipy loadmat can unpickle object arrays from MATLAB files"
+    },
+    {
+        "name": "pandas.read_msgpack",
+        "regex": r"(?:pd|pandas)\.read_msgpack\s*\(",
+        "severity": "HIGH",
+        "cwe": "CWE-502",
+        "desc": "pandas read_msgpack deserializes arbitrary objects — deprecated but still dangerous"
+    },
 ]
 
 MITIGATIONS = {
@@ -348,7 +376,7 @@ def findings_to_sarif(findings: List[Finding], repo_path: str) -> dict:
             "tool": {
                 "driver": {
                     "name": "torchload-checker",
-                    "version": "0.5.0",
+                    "version": "0.5.1",
                     "informationUri": "https://github.com/jeremysommerfeld8910-cpu/torchload-checker",
                     "rules": list(rules.values())
                 }
@@ -375,7 +403,7 @@ def main():
     parser.add_argument("--fail-on", default=None,
                         choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"],
                         help="Only exit non-zero if findings at this severity or above exist")
-    parser.add_argument("--version", action="version", version="torchload-checker 0.5.0")
+    parser.add_argument("--version", action="version", version="torchload-checker 0.5.1")
     args = parser.parse_args()
 
     if not os.path.isdir(args.path):
