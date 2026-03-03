@@ -347,6 +347,67 @@ async def badge(owner: str, repo: str):
     }
 
 
+@app.get("/api/v1/patterns")
+async def patterns():
+    """List all detection patterns with severity, CWE, and description."""
+    # Import patterns from scanner
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("scanner", str(SCANNER_PATH))
+    scanner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(scanner)
+    return {
+        "total_patterns": len(scanner.PATTERNS),
+        "patterns": [
+            {
+                "name": p["name"],
+                "severity": p["severity"],
+                "cwe": p["cwe"],
+                "description": p["desc"],
+            }
+            for p in scanner.PATTERNS
+        ],
+        "severity_breakdown": {
+            sev: sum(1 for p in scanner.PATTERNS if p["severity"] == sev)
+            for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+            if any(p["severity"] == sev for p in scanner.PATTERNS)
+        },
+    }
+
+
+@app.get("/api/v1/scan/{owner}/{repo}")
+async def api_scan_shorthand(owner: str, repo: str, request: Request):
+    """Convenience endpoint: scan github.com/owner/repo without POST body."""
+    repo_url = f"https://github.com/{owner}/{repo}.git"
+
+    client_ip = get_client_ip(request)
+    if not check_rate_limit(client_ip):
+        raise HTTPException(429, f"Rate limit exceeded ({FREE_SCANS_PER_DAY}/day)")
+
+    cached = get_cached_result(repo_url)
+    if cached:
+        cached["from_cache"] = True
+        scan_stats["cache_hits"] += 1
+        return JSONResponse(cached)
+
+    scan_stats["total_scans"] += 1
+
+    try:
+        result = await clone_and_scan(repo_url)
+    except asyncio.TimeoutError:
+        scan_stats["errors"] += 1
+        raise HTTPException(504, "Scan timed out")
+    except Exception as e:
+        scan_stats["errors"] += 1
+        raise HTTPException(500, f"Scan failed: {str(e)[:100]}")
+
+    if result.get("status") == "error":
+        raise HTTPException(400, result.get("error", "Unknown error"))
+
+    save_cached_result(repo_url, result)
+    result["from_cache"] = False
+    return JSONResponse(result)
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8100)

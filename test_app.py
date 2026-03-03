@@ -137,6 +137,43 @@ class TestCORS:
         assert response.status_code == 200
 
 
+class TestPatternsEndpoint:
+    def test_patterns_returns_all(self):
+        response = client.get("/api/v1/patterns")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_patterns"] == 18
+        assert len(data["patterns"]) == 18
+
+    def test_patterns_have_required_fields(self):
+        response = client.get("/api/v1/patterns")
+        data = response.json()
+        for p in data["patterns"]:
+            assert "name" in p
+            assert "severity" in p
+            assert "cwe" in p
+            assert "description" in p
+            assert p["severity"] in ("CRITICAL", "HIGH", "MEDIUM", "LOW")
+
+    def test_patterns_severity_breakdown(self):
+        response = client.get("/api/v1/patterns")
+        data = response.json()
+        assert "severity_breakdown" in data
+        total = sum(data["severity_breakdown"].values())
+        assert total == 18
+
+
+class TestScanShorthand:
+    def test_scan_shorthand_rate_limit(self):
+        """GET scan endpoint should respect rate limits."""
+        rate_limits.clear()
+        # Exhaust rate limit
+        for _ in range(3):
+            rate_limits.setdefault("testclient", []).append(__import__("time").time())
+        response = client.get("/api/v1/scan/pytorch/pytorch")
+        assert response.status_code == 429
+
+
 class TestAPIDocs:
     def test_openapi_docs(self):
         response = client.get("/api/docs")
