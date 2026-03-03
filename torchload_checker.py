@@ -185,6 +185,20 @@ PATTERNS = [
         "cwe": "CWE-502",
         "desc": "pandas read_msgpack deserializes arbitrary objects — deprecated but still dangerous"
     },
+    {
+        "name": "trust_remote_code=True",
+        "regex": r"(?:from_pretrained|from_config|AutoModel|AutoTokenizer|pipeline)\s*\([^)]*trust_remote_code\s*=\s*True",
+        "severity": "CRITICAL",
+        "cwe": "CWE-94",
+        "desc": "trust_remote_code=True downloads and executes arbitrary Python code from HuggingFace Hub"
+    },
+    {
+        "name": "torch.hub.load",
+        "regex": r"torch\.hub\.load\s*\(",
+        "severity": "HIGH",
+        "cwe": "CWE-94",
+        "desc": "torch.hub.load downloads and executes arbitrary code from GitHub repositories"
+    },
 ]
 
 MITIGATIONS = {
@@ -376,7 +390,7 @@ def findings_to_sarif(findings: List[Finding], repo_path: str) -> dict:
             "tool": {
                 "driver": {
                     "name": "torchload-checker",
-                    "version": "0.5.1",
+                    "version": "0.6.0",
                     "informationUri": "https://github.com/jeremysommerfeld8910-cpu/torchload-checker",
                     "rules": list(rules.values())
                 }
@@ -403,7 +417,7 @@ def main():
     parser.add_argument("--fail-on", default=None,
                         choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"],
                         help="Only exit non-zero if findings at this severity or above exist")
-    parser.add_argument("--version", action="version", version="torchload-checker 0.5.1")
+    parser.add_argument("--version", action="version", version="torchload-checker 0.6.0")
     args = parser.parse_args()
 
     if not os.path.isdir(args.path):

@@ -67,7 +67,7 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
-        assert data["version"] == "0.5.1"
+        assert data["version"] == "0.6.0"
         assert "scanner" not in data  # Don't leak internal paths
 
 
@@ -113,8 +113,8 @@ class TestStatsEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "total_scans" in data
-        assert data["patterns_detected"] == 22
-        assert data["version"] == "0.5.1"
+        assert data["patterns_detected"] == 24
+        assert data["version"] == "0.6.0"
 
 
 class TestBadgeEndpoint:
@@ -142,8 +142,8 @@ class TestPatternsEndpoint:
         response = client.get("/api/v1/patterns")
         assert response.status_code == 200
         data = response.json()
-        assert data["total_patterns"] == 22
-        assert len(data["patterns"]) == 22
+        assert data["total_patterns"] == 24
+        assert len(data["patterns"]) == 24
 
     def test_patterns_have_required_fields(self):
         response = client.get("/api/v1/patterns")
@@ -160,7 +160,7 @@ class TestPatternsEndpoint:
         data = response.json()
         assert "severity_breakdown" in data
         total = sum(data["severity_breakdown"].values())
-        assert total == 22
+        assert total == 24
 
 
 class TestScanShorthand:
