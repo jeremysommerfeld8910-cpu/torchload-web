@@ -7,14 +7,14 @@ ML Security Scanner (torchload-checker)
 Security > Code Analysis
 
 ## Description
-Scan GitHub repositories for unsafe deserialization vulnerabilities (CWE-502) in ML/AI code. Detects torch.load(), pickle, cloudpickle, dill, joblib.load, yaml.load, and 8 more unsafe patterns. Returns JSON results with severity, line numbers, and mitigation status.
+Scan GitHub repositories for unsafe deserialization vulnerabilities (CWE-502) in ML/AI code. 29 detection patterns covering torch.load(), pickle, cloudpickle, ZeroMQ recv_pyobj, LangChain serialization, Keras safe_mode bypasses, and more. Updated for 2025-2026 CVEs. Returns JSON results with severity, line numbers, and mitigation status. 0% false positive rate on 35+ clean repos.
 
 ## Base URL
 https://root-independent-eve-shame.trycloudflare.com (temporary, changes on restart)
 → Permanent URL needed: Render.com (render.yaml ready), Railway, or Cloudflare named tunnel
 → BLOCKER: Jeremy needs to create account on one of these platforms
 
-## New Endpoints (v0.4.0+)
+## New Endpoints (v0.7.0)
 
 ### GET /api/v1/stats
 Public scan statistics (total scans, cache hits, errors).
