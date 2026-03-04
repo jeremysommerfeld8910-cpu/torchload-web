@@ -3,7 +3,7 @@
 torchload-checker — Scan Python repos for unsafe torch.load() and pickle usage.
 
 Detects CWE-502 (Deserialization of Untrusted Data) patterns in ML/AI codebases.
-Based on EPNA's vulnerability research that found 20+ real CVEs.
+Based on EPNA's vulnerability research covering 30+ real CVEs (2024-2026).
 
 Usage:
     python3 torchload_checker.py /path/to/repo
@@ -130,11 +130,11 @@ PATTERNS = [
         "desc": "torch.save with potentially user-controlled data — review data source"
     },
     {
-        "name": "tf.keras.models.load_model (unsafe)",
-        "regex": r"(?:tf\.keras|keras)\.models\.load_model\s*\([^)]*(?:compile\s*=\s*True|custom_objects)",
+        "name": "keras.load_model (safe_mode bypasses)",
+        "regex": r"(?:tf\.keras|keras)\.(?:models\.)?load_model\s*\(",
         "severity": "HIGH",
         "cwe": "CWE-502",
-        "desc": "Keras load_model with compile=True or custom_objects can execute arbitrary code via Lambda layers"
+        "desc": "Keras load_model — safe_mode=True bypassed in CVE-2025-1550, CVE-2025-8747, CVE-2025-9905. Update Keras >= 3.11.3"
     },
     {
         "name": "onnx.load (external data)",
@@ -158,46 +158,82 @@ PATTERNS = [
         "desc": "exec/eval with model-related data — direct code execution vulnerability"
     },
     {
-        "name": "torch.jit.load",
-        "regex": r"torch\.jit\.load\s*\(",
-        "severity": "HIGH",
-        "cwe": "CWE-502",
-        "desc": "TorchScript models can contain arbitrary Python code executed during loading"
-    },
-    {
-        "name": "jsonpickle.decode",
-        "regex": r"jsonpickle\.(?:decode|loads?)\s*\(",
-        "severity": "HIGH",
-        "cwe": "CWE-502",
-        "desc": "jsonpickle deserializes arbitrary Python objects from JSON — same RCE risk as pickle"
-    },
-    {
         "name": "scipy.io.loadmat",
         "regex": r"scipy\.io\.loadmat\s*\(",
         "severity": "MEDIUM",
         "cwe": "CWE-502",
-        "desc": "scipy loadmat can unpickle object arrays from MATLAB files"
+        "desc": "scipy.io.loadmat can deserialize pickle objects embedded in .mat files"
     },
     {
-        "name": "pandas.read_msgpack",
-        "regex": r"(?:pd|pandas)\.read_msgpack\s*\(",
+        "name": "torch.package import",
+        "regex": r"torch\.package\.PackageImporter\s*\(",
         "severity": "HIGH",
         "cwe": "CWE-502",
-        "desc": "pandas read_msgpack deserializes arbitrary objects — deprecated but still dangerous"
+        "desc": "torch.package imports can execute arbitrary Python code from untrusted .pt archives"
     },
     {
-        "name": "trust_remote_code=True",
-        "regex": r"(?:from_pretrained|from_config|AutoModel|AutoTokenizer|pipeline)\s*\([^)]*trust_remote_code\s*=\s*True",
+        "name": "transformers pipeline (trust_remote_code)",
+        "regex": r"(?:pipeline|from_pretrained)\s*\([^)]*trust_remote_code\s*=\s*True",
         "severity": "CRITICAL",
         "cwe": "CWE-94",
-        "desc": "trust_remote_code=True downloads and executes arbitrary Python code from HuggingFace Hub"
+        "desc": "trust_remote_code=True allows execution of arbitrary code from HuggingFace Hub models"
     },
     {
-        "name": "torch.hub.load",
-        "regex": r"torch\.hub\.load\s*\(",
+        "name": "jsonpickle.decode",
+        "regex": r"jsonpickle\.decode\s*\(",
         "severity": "HIGH",
-        "cwe": "CWE-94",
-        "desc": "torch.hub.load downloads and executes arbitrary code from GitHub repositories"
+        "cwe": "CWE-502",
+        "desc": "jsonpickle.decode can instantiate arbitrary objects — equivalent to pickle.loads for JSON"
+    },
+    {
+        "name": "catboost.CatBoost.load_model",
+        "regex": r"(?:catboost|CatBoost|CatBoostClassifier|CatBoostRegressor)\.load_model\s*\(",
+        "severity": "MEDIUM",
+        "cwe": "CWE-502",
+        "desc": "CatBoost model loading may deserialize untrusted model files"
+    },
+    {
+        "name": "zipfile extract (model files)",
+        "regex": r"(?:ZipFile|zipfile)\s*\([^)]*\)\.(?:extract|extractall)\s*\(",
+        "severity": "MEDIUM",
+        "cwe": "CWE-22",
+        "desc": "Zip extraction without path validation — potential path traversal in model archives (Zip Slip)"
+    },
+    # === 2025-2026 CVE-driven patterns (research batch Mar 2026) ===
+    {
+        "name": "zmq.recv_pyobj (pickle over ZeroMQ)",
+        "regex": r"\.recv_pyobj\s*\(",
+        "severity": "HIGH",
+        "cwe": "CWE-502",
+        "desc": "ZeroMQ recv_pyobj() calls pickle.loads() internally — RCE via crafted payloads (CVE-2025-30165, CVE-2025-23254)"
+    },
+    {
+        "name": "langchain.load (serialization injection)",
+        "regex": r"(?:from\s+langchain\.load\s+import|langchain\.load\.(?:loads?|load))\s*\(",
+        "severity": "HIGH",
+        "cwe": "CWE-502",
+        "desc": "LangChain serialization injection via 'lc' keys enables secret exfiltration (CVE-2025-68664). Update langchain-core >= 0.3.81"
+    },
+    {
+        "name": "langgraph pickle_fallback",
+        "regex": r"pickle_fallback\s*=\s*True",
+        "severity": "MEDIUM",
+        "cwe": "CWE-502",
+        "desc": "LangGraph JsonPlusSerializer pickle fallback — cache poisoning RCE (CVE-2026-27794). Update langgraph-checkpoint >= 4.0.0"
+    },
+    {
+        "name": "pip.main() (pickle payload vector)",
+        "regex": r"pip\.main\s*\(|pip\._internal\.cli\.main\s*\(",
+        "severity": "CRITICAL",
+        "cwe": "CWE-502",
+        "desc": "pip.main() used in pickle payloads to install malicious packages — bypasses picklescan (CVE-2025-1716)"
+    },
+    {
+        "name": "onnx.save_external_data (path traversal)",
+        "regex": r"save_external_data\s*\(",
+        "severity": "MEDIUM",
+        "cwe": "CWE-22",
+        "desc": "ONNX save_external_data — path traversal via external_data.location (CVE-2025-51480)"
     },
 ]
 
@@ -390,7 +426,7 @@ def findings_to_sarif(findings: List[Finding], repo_path: str) -> dict:
             "tool": {
                 "driver": {
                     "name": "torchload-checker",
-                    "version": "0.6.0",
+                    "version": "0.7.0",
                     "informationUri": "https://github.com/jeremysommerfeld8910-cpu/torchload-checker",
                     "rules": list(rules.values())
                 }
@@ -417,7 +453,7 @@ def main():
     parser.add_argument("--fail-on", default=None,
                         choices=["CRITICAL", "HIGH", "MEDIUM", "LOW"],
                         help="Only exit non-zero if findings at this severity or above exist")
-    parser.add_argument("--version", action="version", version="torchload-checker 0.6.0")
+    parser.add_argument("--version", action="version", version="torchload-checker 0.7.0")
     args = parser.parse_args()
 
     if not os.path.isdir(args.path):

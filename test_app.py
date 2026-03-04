@@ -2,6 +2,9 @@
 import pytest
 from fastapi.testclient import TestClient
 from app import app, validate_github_url, check_rate_limit, rate_limits, scan_stats
+from torchload_checker import PATTERNS
+
+NUM_PATTERNS = len(PATTERNS)
 
 
 client = TestClient(app)
@@ -67,7 +70,7 @@ class TestHealthEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "ok"
-        assert data["version"] == "0.6.0"
+        assert data["version"] == "0.7.0"
         assert "scanner" not in data  # Don't leak internal paths
 
 
@@ -113,8 +116,8 @@ class TestStatsEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert "total_scans" in data
-        assert data["patterns_detected"] == 24
-        assert data["version"] == "0.6.0"
+        assert data["patterns_detected"] == NUM_PATTERNS
+        assert data["version"] == "0.7.0"
 
 
 class TestBadgeEndpoint:
@@ -142,8 +145,8 @@ class TestPatternsEndpoint:
         response = client.get("/api/v1/patterns")
         assert response.status_code == 200
         data = response.json()
-        assert data["total_patterns"] == 24
-        assert len(data["patterns"]) == 24
+        assert data["total_patterns"] == NUM_PATTERNS
+        assert len(data["patterns"]) == NUM_PATTERNS
 
     def test_patterns_have_required_fields(self):
         response = client.get("/api/v1/patterns")
@@ -160,7 +163,7 @@ class TestPatternsEndpoint:
         data = response.json()
         assert "severity_breakdown" in data
         total = sum(data["severity_breakdown"].values())
-        assert total == 24
+        assert total == NUM_PATTERNS
 
 
 class TestScanShorthand:

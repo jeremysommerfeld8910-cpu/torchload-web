@@ -58,7 +58,7 @@
 
         <div class="stats">
             <div class="stat">
-                <div class="stat-num">18</div>
+                <div class="stat-num">24</div>
                 <div class="stat-label">Detection Patterns</div>
             </div>
             <div class="stat">
@@ -116,11 +116,11 @@
             <pre style="background: #0a0a0a; padding: 1rem; border-radius: 8px; font-size: 0.85rem; overflow-x: auto; color: #ccc;">curl -X POST /api/v1/scan -d '{"repo_url": "owner/repo"}'
 # Or use the shorthand:
 curl /api/v1/scan/owner/repo</pre>
-            <p style="color: #666; font-size: 0.8rem; margin-top: 0.5rem;"><a href="/api/docs" style="color: #888;">Full API docs</a> | <a href="/api/v1/patterns" style="color: #888;">View all patterns</a> | <a href="/api/v1/pricing" style="color: #888;">Pricing</a></p>
+            <p style="color: #666; font-size: 0.8rem; margin-top: 0.5rem;"><a href="/api/docs" style="color: #888;">Full API docs</a> | <a href="/api/v1/patterns" style="color: #888;">View all patterns</a> | <a href="/pricing" style="color: #00d4ff; font-weight: bold;">Pro &amp; Enterprise Plans</a></p>
         </div>
 
         <footer>
-            <p>torchload-checker v0.6.0 | <a href="https://github.com/jeremysommerfeld8910-cpu/torchload-checker">GitHub</a> | Free: {{ free_scans_per_day if free_scans_per_day else 3 }} scans/day</p>
+            <p>torchload-checker v0.7.0 | <a href="https://github.com/jeremysommerfeld8910-cpu/torchload-checker">GitHub</a> | Free: {{ free_scans_per_day if free_scans_per_day else 3 }} scans/day</p>
             <p style="margin-top: 0.5rem;">*In production code paths. Test/example directories excluded by default.</p>
         </footer>
     </div>
