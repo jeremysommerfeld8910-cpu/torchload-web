@@ -116,7 +116,7 @@ Compatible with GitHub Code Scanning, VS Code SARIF Viewer, and any SARIF-compat
 
 ## Try It Now
 
-- **Web Scanner**: [torchload-web](https://root-independent-eve-shame.trycloudflare.com) — paste a repo URL, get instant results
+- **Web Scanner**: [torchload-web](https://github.com/jeremysommerfeld8910-cpu/torchload-web) — clone and run locally, or use the API
 - **GitHub**: [jeremysommerfeld8910-cpu/torchload-checker](https://github.com/jeremysommerfeld8910-cpu/torchload-checker)
 - **PyPI**: `pip install torchload-checker`
 - **GitHub Action**: Add to your workflow in 3 lines
