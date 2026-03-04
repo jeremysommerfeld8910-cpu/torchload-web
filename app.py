@@ -750,7 +750,7 @@ footer { text-align: center; padding: 40px; color: #555; }
         <div class="price">$0<span>/month</span></div>
         <ul>
             <li>3 scans per day</li>
-            <li>24 detection patterns</li>
+            <li>29 detection patterns</li>
             <li>JSON results</li>
             <li>GitHub badge</li>
             <li>Community support</li>
@@ -791,8 +791,8 @@ footer { text-align: center; padding: 40px; color: #555; }
     <h2>Trusted by Security Teams</h2>
     <div class="stat-row">
         <div class="stat"><div class="num">20+</div><div class="label">CVEs Found</div></div>
-        <div class="stat"><div class="num">24</div><div class="label">Detection Patterns</div></div>
-        <div class="stat"><div class="num">507</div><div class="label">Findings Across Repos</div></div>
+        <div class="stat"><div class="num">29</div><div class="label">Detection Patterns</div></div>
+        <div class="stat"><div class="num">500+</div><div class="label">Findings Across Repos</div></div>
         <div class="stat"><div class="num">0%</div><div class="label">False Positive Rate</div></div>
     </div>
 </div>
@@ -801,11 +801,11 @@ footer { text-align: center; padding: 40px; color: #555; }
     <h2>FAQ</h2>
     <div class="faq-item">
         <h3>What does torchload-checker detect?</h3>
-        <p>CWE-502 (Deserialization of Untrusted Data) vulnerabilities including unsafe torch.load(), pickle, joblib, numpy.load, PyYAML, shelve, dill, and cloudpickle usage.</p>
+        <p>CWE-502 (Deserialization of Untrusted Data) vulnerabilities including unsafe torch.load(), pickle, ZeroMQ recv_pyobj, LangChain serialization, Keras load_model, joblib, numpy.load, and more. Updated for 2025-2026 CVEs.</p>
     </div>
     <div class="faq-item">
         <h3>How accurate is it?</h3>
-        <p>0% false positive rate across 29 clean repos tested. Our patterns are derived from real CVEs we discovered and reported.</p>
+        <p>0% false positive rate across 35+ clean repos tested. Our patterns are derived from real CVEs and updated for the latest 2025-2026 vulnerability research.</p>
     </div>
     <div class="faq-item">
         <h3>Can I use the API in CI/CD?</h3>
