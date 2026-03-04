@@ -458,7 +458,7 @@ async def pricing():
                 "name": "Free",
                 "price": "$0/month",
                 "scans_per_day": 3,
-                "features": ["Basic CWE-502 scan", "18 detection patterns", "JSON results"]
+                "features": ["Basic CWE-502 scan", "29 detection patterns", "JSON results"]
             },
             {
                 "name": "Pro",
