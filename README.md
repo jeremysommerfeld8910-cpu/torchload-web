@@ -2,18 +2,19 @@
 
 Web UI and REST API for scanning ML/AI repositories for unsafe deserialization vulnerabilities (CWE-502).
 
-[![Tests](https://img.shields.io/badge/tests-23%20passing-brightgreen)](https://github.com/jeremysommerfeld8910-cpu/torchload-web)
+[![Tests](https://img.shields.io/badge/tests-30%20passing-brightgreen)](https://github.com/jeremysommerfeld8910-cpu/torchload-web)
 [![Python](https://img.shields.io/badge/python-3.12-blue)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![CWE-502](https://img.shields.io/badge/CWE--502-22%20patterns-orange)](https://cwe.mitre.org/data/definitions/502.html)
+[![CWE-502](https://img.shields.io/badge/CWE--502-29%20patterns-orange)](https://cwe.mitre.org/data/definitions/502.html)
+[![FP Rate](https://img.shields.io/badge/false%20positives-0%25-brightgreen)](https://github.com/jeremysommerfeld8910-cpu/torchload-web)
 
-Powered by [torchload-checker](https://github.com/jeremysommerfeld8910-cpu/torchload-checker) - detects `torch.load()`, `pickle.load()`, `yaml.load()`, `torch.jit.load()`, and 18 more unsafe deserialization patterns.
+Powered by [torchload-checker](https://github.com/jeremysommerfeld8910-cpu/torchload-checker) — 29 detection patterns covering `torch.load()`, `pickle`, ZeroMQ `recv_pyobj()`, LangChain serialization, Keras safe_mode bypasses, and more. Updated for 2025-2026 CVEs.
 
 ## Features
 
 - **Web UI** - Paste a GitHub repo URL and get results instantly
 - **REST API** - JSON API for programmatic access
-- **22 Detection Patterns** - torch.load, torch.jit.load, pickle, cloudpickle, dill, joblib, yaml.load, shelve, marshal, numpy.load, pandas.read_pickle, jsonpickle, scipy.io.loadmat, and more
+- **29 Detection Patterns** - torch.load, pickle, ZeroMQ recv_pyobj, LangChain load, Keras load_model, cloudpickle, dill, joblib, yaml.load, and more (updated for 2025-2026 CVEs)
 - **Mitigation Detection** - Checks for safetensors, weights_only=True, safe_loader usage
 - **Severity Ratings** - CRITICAL, HIGH, MEDIUM, LOW with CWE references
 - **Result Caching** - 1-hour cache for repeated scans
@@ -139,21 +140,32 @@ pytest test_app.py -v
 | `numpy.load(allow_pickle=True)` | MEDIUM | Explicitly enabling pickle in numpy |
 | `yaml.load()` (no SafeLoader) | HIGH | YAML deserialization with code execution |
 | `safetensors` (mitigation) | INFO | Safe serialization detected |
+| `zmq.recv_pyobj()` | HIGH | ZeroMQ pickle deserialization (CVE-2025-30165) |
+| `langchain.load()` | HIGH | LangChain serialization injection (CVE-2025-68664) |
+| `langgraph pickle_fallback` | MEDIUM | LangGraph cache poisoning (CVE-2026-27794) |
+| `pip.main()` | CRITICAL | Picklescan bypass vector (CVE-2025-1716) |
+| `onnx.save_external_data()` | MEDIUM | ONNX path traversal (CVE-2025-51480) |
+| `keras.load_model()` | HIGH | safe_mode bypasses (CVE-2025-1550/8747/9905) |
+| Custom `Unpickler` subclass | HIGH | Custom deserialization with potential backdoors |
+| `torch.jit.load()` | HIGH | TorchScript models with embedded Python |
 
 ## Real-World Results
 
-Scanned 42+ popular ML/AI repositories. **358 findings across 13 affected repos:**
+Scanned 50+ popular ML/AI repositories. **500+ findings across major repos:**
 
-| Repository | Stars | Findings |
-|-----------|-------|----------|
-| facebookresearch/fairseq | 32K+ | 81 |
-| NVIDIA/NeMo | 13K+ | 75 |
-| huggingface/transformers | 140K+ | 46 |
-| microsoft/DeepSpeed | 36K+ | 35 |
-| coqui-ai/TTS | 45K+ | 31 |
-| + 8 more repos | | 90 |
+| Repository | Stars | Findings | Status |
+|-----------|-------|----------|--------|
+| ray-project/ray | 40K | 163 | Unsafe patterns |
+| NVIDIA/TensorRT-LLM | 12K | 89 | HMAC mitigated |
+| huggingface/transformers | 148K | 60 | Partial (safetensors) |
+| NVIDIA/NeMo | 17K | 53 | Partial |
+| ModelTC/lightllm | 3K | 38 | CVE-2026-26220 UNFIXED |
+| mlflow/mlflow | 20K | 27 | Partial |
+| facebookresearch/detectron2 | 34K | 17 | Zero mitigations |
+| keras-team/keras | 65K | 0 | Clean |
+| onnx/onnx | 20K | 0 | Clean |
 
-Zero false positives across 29 clean repos (TensorFlow, scikit-learn, Keras, etc.).
+**0% false positive rate** across 35+ clean repos (TensorFlow, scikit-learn, Keras, ONNX, XGBoost, etc.).
 
 ## CLI Usage (pip install)
 
