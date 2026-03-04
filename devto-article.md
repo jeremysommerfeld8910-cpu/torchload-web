@@ -7,7 +7,7 @@ tags: machinelearning, security, python, pytorch
 
 # I Scanned 50+ ML Repos for torch.load() Vulnerabilities
 
-**TL;DR:** `torch.load()` uses pickle, which can execute arbitrary code. I found 230+ unsafe patterns across major ML projects including TorchServe's core handler. I built a free scanner you can use right now.
+**TL;DR:** `torch.load()` uses pickle, which can execute arbitrary code. I found 500+ unsafe patterns across major ML projects including Ray, TensorRT-LLM, and TorchServe's core handler. I built a free scanner with 29 detection patterns covering 2025-2026 CVEs — you can use it right now.
 
 ## The Problem
 
@@ -27,18 +27,20 @@ I scanned 50+ popular ML/AI repositories on GitHub. Results:
 
 | Repository | Stars | Unsafe Patterns | Mitigated? |
 |-----------|-------|----------------|------------|
+| ray-project/ray | 40K | 163 | **No** |
+| NVIDIA/TensorRT-LLM | 12K | 89 | HMAC validated |
+| huggingface/transformers | 148K | 60 | Partially (safetensors) |
 | NVIDIA/NeMo | 17K | 53 | Partially |
-| huggingface/transformers | 148K | 46 | Partially (safetensors) |
+| ModelTC/lightllm | 3K | 38 | **No** (CVE-2026-26220) |
 | coqui-ai/TTS | 37K | 31 | **No** |
-| microsoft/DeepSpeed | 37K | 24 | Partially |
+| mlflow/mlflow | 20K | 27 | Partially |
+| facebookresearch/detectron2 | 34K | 17 | **No** |
 | pytorch/serve (TorchServe) | 4K | 20 | **No** (core handler!) |
-| facebookresearch/detectron2 | 34K | 16 | **No** |
-| pytorch/examples | 23K | 15 | Partially |
-| run-llama/llama_index | 47K | 11 | **No** |
 | Lightning-AI/pytorch-lightning | 31K | 10 | Partially |
-| comfyanonymous/ComfyUI | 105K | 2 | Mostly migrated |
+| keras-team/keras | 65K | 0 | Clean |
+| onnx/onnx | 20K | 0 | Clean |
 
-**Total: 230+ unsafe deserialization patterns across major projects.** TorchServe's core serving handler is affected — every model deployment is at risk. detectron2 and coqui-ai/TTS have zero mitigations. ComfyUI and text-generation-webui have properly migrated, proving it's possible.
+**Total: 500+ unsafe deserialization patterns across major projects.** Ray has 163 patterns with zero mitigation. LightLLM has unauthenticated pickle.loads on WebSocket endpoints (CVE-2026-26220, still unfixed). 0% false positive rate on 35+ clean repos scanned.
 
 ## The Fix Is Simple
 
@@ -64,10 +66,15 @@ I built **torchload-checker** — a free, open-source scanner that catches:
 - `yaml.load` without SafeLoader
 - `numpy.load(allow_pickle=True)`
 - `pandas.read_pickle()`
-- `tf.keras.models.load_model` with `custom_objects`
+- `tf.keras.models.load_model` (safe_mode bypasses — 3 CVEs in 2025)
+- `zmq.recv_pyobj()` (CVE-2025-30165, CVE-2025-23254)
+- `langchain.load` serialization injection (CVE-2025-68664)
+- `langgraph pickle_fallback` (CVE-2026-27794)
+- `pip.main()` picklescan bypass (CVE-2025-1716)
+- `onnx.save_external_data` path traversal (CVE-2025-51480)
 - `__reduce__` deserialization hooks
 - `exec()`/`eval()` in model loading contexts
-- And 5 more patterns (18 total)
+- And more (29 total)
 
 ### Install & Run
 
@@ -79,7 +86,7 @@ torchload-checker /path/to/your/repo
 ### GitHub Action (add to your CI)
 
 ```yaml
-- uses: jeremysommerfeld8910-cpu/torchload-checker@v0.5.0
+- uses: jeremysommerfeld8910-cpu/torchload-checker@v0.7.0
   with:
     severity: HIGH
     sarif: true
@@ -100,7 +107,7 @@ Compatible with GitHub Code Scanning, VS Code SARIF Viewer, and any SARIF-compat
 
 ## Key Features
 
-- **18 detection patterns** for unsafe deserialization
+- **29 detection patterns** for unsafe deserialization (updated for 2025-2026 CVEs)
 - **Multi-line detection** — catches function calls split across lines
 - **Mitigation awareness** — reports when safetensors or weights_only=True are already used
 - **Baseline mode** — adopt incrementally without fixing everything at once
