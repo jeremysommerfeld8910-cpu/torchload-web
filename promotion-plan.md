@@ -1,5 +1,5 @@
-# torchload-checker v0.5.1 Promotion Plan
-_Updated: 2026-03-02. Ready to execute — all drafts written._
+# torchload-checker v0.7.0 Promotion Plan
+_Updated: 2026-03-03. Ready to execute — all drafts written._
 
 ## Status: READY FOR JEREMY
 All content drafted. Jeremy just needs to copy/paste and post.
@@ -19,7 +19,7 @@ All content drafted. Jeremy just needs to copy/paste and post.
 
 ### 3. Reddit r/netsec — READY
 - File: `~/torchload-web/promotion-reddit-netsec.md`
-- Technical focus: all 22 patterns, SARIF, CI integration
+- Technical focus: all 29 patterns, SARIF, CI integration
 - r/netsec wants quality technical content
 
 ### 4. Reddit r/Python — TODO (Jeremy posts)
@@ -53,12 +53,14 @@ All content drafted. Jeremy just needs to copy/paste and post.
 - [ ] Render.com account for permanent URL (render.yaml ready)
 - [ ] Awesome list PR submissions
 
-## Product Stats (v0.5.0)
-- 18 detection patterns (CWE-502 + CWE-94)
-- 200+ findings across 50+ repos
+## Product Stats (v0.7.0)
+- 29 detection patterns (CWE-502 + CWE-94 + CWE-22)
+- 500+ findings across 50+ repos
+- Covers 2025-2026 CVEs (ZeroMQ, LangChain, LangGraph, picklescan bypass, ONNX)
 - GitHub Action marketplace-ready
 - SARIF output for Code Scanning
 - Zero dependencies, pure Python
-- 23 tests passing
-- Web scanner live (Cloudflare tunnel)
-- PyPI package built (dist/torchload_checker-0.5.0-py3-none-any.whl)
+- 30 tests passing, 0% false positive rate on 35+ clean repos
+- Web scanner live on systemd (port 8100)
+- Verified scan results showcase on landing page
+- PyPI package ready (needs Jeremy upload)
